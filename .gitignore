@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Frontend build output
+dist/
+.vite/
+coverage/
+
+# Tauri / Rust build output
+src-tauri/target/
+src-tauri/gen/
+src-tauri/bundle/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# User/runtime data
+user-data/
+*.bak
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# TypeScript incremental cache
+*.tsbuildinfo

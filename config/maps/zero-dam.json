@@ -1,0 +1,60 @@
+{
+  "defaultCalibration": {
+    "offsetX": 0,
+    "offsetY": 0,
+    "scale": 1
+  },
+  "id": "zero-dam",
+  "name": "零号大坝",
+  "points": [
+    {
+      "description": "靠近保险箱刷新点，注意窗口方向。",
+      "id": "diamond-001",
+      "screenshots": [],
+      "tags": [
+        "高价值",
+        "室内"
+      ],
+      "title": "二楼保险旁",
+      "type": "diamond",
+      "x": 0.532,
+      "y": 0.418
+    },
+    {
+      "description": "房卡刷新点示例。",
+      "id": "keycard-001",
+      "screenshots": [],
+      "tags": [
+        "房卡"
+      ],
+      "title": "宿舍桌面",
+      "type": "keycard",
+      "x": 0.274,
+      "y": 0.661
+    },
+    {
+      "description": "示例保险箱点位，可在编辑模式中修改。",
+      "id": "safe-001",
+      "screenshots": [],
+      "tags": [
+        "保险箱",
+        "高价值"
+      ],
+      "title": "行政楼保险箱",
+      "type": "safe",
+      "x": 0.693,
+      "y": 0.356
+    },
+    {
+      "description": "",
+      "id": "diamond-004",
+      "screenshots": [],
+      "tags": [],
+      "title": "新点位",
+      "type": "diamond",
+      "x": 0.77,
+      "y": 0.308
+    }
+  ],
+  "version": 1
+}

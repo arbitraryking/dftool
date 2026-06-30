@@ -1,0 +1,169 @@
+:root {
+  color: #e6edf3;
+  background: transparent;
+  font-family: Inter, 'Microsoft YaHei', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: transparent;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #21262d;
+  color: #e6edf3;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #30363d;
+}
+
+button.active {
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #0d1117;
+  color: #e6edf3;
+  padding: 8px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+}
+
+.control-app {
+  display: grid;
+  min-height: 100vh;
+  gap: 16px;
+  align-content: start;
+  background: #0d1117;
+  padding: 18px;
+}
+
+.panel {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  background: #161b22;
+  padding: 14px;
+}
+
+.panel h1,
+.panel h2,
+.panel h3 {
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.muted {
+  color: #8b949e;
+}
+
+.error {
+  color: #ff7b72;
+}
+
+.overlay-app {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+
+.marker-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.marker {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+.marker:hover {
+  background: transparent;
+}
+
+.marker img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.marker-details,
+.marker-editor {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 20;
+  width: min(360px, calc(100vw - 48px));
+  border: 1px solid #30363d;
+  border-radius: 14px;
+  background: rgb(13 17 23 / 94%);
+  padding: 14px;
+  box-shadow: 0 10px 40px rgb(0 0 0 / 35%);
+}
+
+.marker-editor form {
+  display: grid;
+  gap: 10px;
+}
+
+.screenshot-box {
+  display: grid;
+  min-height: 160px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  background: #010409;
+}
+
+.screenshot-box img {
+  max-width: 100%;
+  max-height: 260px;
+}

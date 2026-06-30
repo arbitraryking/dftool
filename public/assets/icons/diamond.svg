@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="diamond">
+  <path fill="#40D9FF" d="M12 20 22 8h20l10 12-20 36L12 20Z"/>
+  <path fill="#B8F3FF" d="M22 8h20l-10 12L22 8Z"/>
+  <path fill="#0B6D82" d="M12 20h40L32 56 12 20Z" opacity=".35"/>
+  <path fill="none" stroke="#E8FCFF" stroke-width="3" d="M12 20 22 8h20l10 12-20 36L12 20Z"/>
+</svg>

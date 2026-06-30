@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "types": [
+    {
+      "id": "diamond",
+      "name": "钻石",
+      "icon": "assets/icons/diamond.svg",
+      "color": "#40D9FF",
+      "defaultSize": 30,
+      "valueLevel": 5,
+      "defaultVisible": true
+    },
+    {
+      "id": "keycard",
+      "name": "房卡",
+      "icon": "assets/icons/keycard.svg",
+      "color": "#FFCC33",
+      "defaultSize": 30,
+      "valueLevel": 5,
+      "defaultVisible": true
+    },
+    {
+      "id": "safe",
+      "name": "保险箱",
+      "icon": "assets/icons/safe.svg",
+      "color": "#A78BFA",
+      "defaultSize": 28,
+      "valueLevel": 4,
+      "defaultVisible": true
+    }
+  ]
+}
