@@ -1,6 +1,6 @@
 [package]
 name = "dftool"
-version = "0.1.0"
+version = "0.1.1"
 description = "Delta Force map marker overlay"
 authors = ["DFtool"]
 edition = "2021"
