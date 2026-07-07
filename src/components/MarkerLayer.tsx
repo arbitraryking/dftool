@@ -1,5 +1,6 @@
-import { PointerEvent, useMemo, useRef } from 'react';
+import { ImgHTMLAttributes, PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { screenToRelative } from '../domain/markerPosition';
+import { resolveResourceUrl } from '../services/tauriApi';
 import { getSelectedMap, useAppDispatch, useAppState } from '../state/appStore';
 
 type DragStart = {
@@ -9,6 +10,32 @@ type DragStart = {
 };
 
 const DRAG_THRESHOLD = 4;
+
+type ResourceImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
+  src: string;
+};
+
+function ResourceImage({ src, ...props }: ResourceImageProps) {
+  const [resolvedSrc, setResolvedSrc] = useState(`/${src}`);
+
+  useEffect(() => {
+    let disposed = false;
+
+    resolveResourceUrl(src)
+      .then((url) => {
+        if (!disposed) setResolvedSrc(url);
+      })
+      .catch(() => {
+        if (!disposed) setResolvedSrc(`/${src}`);
+      });
+
+    return () => {
+      disposed = true;
+    };
+  }, [src]);
+
+  return <img src={resolvedSrc} {...props} />;
+}
 
 export function MarkerLayer() {
   const state = useAppState();
@@ -128,7 +155,7 @@ export function MarkerLayer() {
             onPointerDown={(event) => handlePointerDown(event, point.id)}
             onPointerUp={(event) => handlePointerUp(event, point.id)}
           >
-            {type?.icon ? <img src={`/${type.icon}`} alt="" /> : <span>?</span>}
+            {type?.icon ? <ResourceImage src={type.icon} alt="" /> : <span>?</span>}
           </button>
         );
       })}

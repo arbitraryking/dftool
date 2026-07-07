@@ -41,7 +41,10 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "resources": ["../config", "../assets"],
+    "resources": {
+      "../config": "config",
+      "../assets": "assets"
+    },
     "icon": ["icons/icon.ico"]
   }
 }

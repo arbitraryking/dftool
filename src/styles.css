@@ -90,6 +90,45 @@ label {
   align-items: center;
 }
 
+.path-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.path-groups h3 {
+  color: #c9d1d9;
+  font-size: 13px;
+}
+
+.path-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.path-item {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #0d1117;
+  padding: 8px 10px;
+}
+
+.path-item dt {
+  color: #8b949e;
+  font-size: 12px;
+}
+
+.path-item dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #d2a8ff;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .muted {
   color: #8b949e;
 }

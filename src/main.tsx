@@ -11,14 +11,19 @@ if (!rootElement) {
   throw new Error('Root element not found');
 }
 
+const root = createRoot(rootElement);
+
 void getWindowLabel().then((label) => {
   const App = label === 'overlay' ? OverlayApp : ControlApp;
 
-  createRoot(rootElement).render(
+  root.render(
     <React.StrictMode>
       <AppStoreProvider>
         <App />
       </AppStoreProvider>
     </React.StrictMode>,
   );
+}).catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  root.render(<main className="control-app error">程序启动失败：{message}</main>);
 });
