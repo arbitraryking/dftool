@@ -7,8 +7,25 @@ export type RawConfigBundle = {
   settings?: unknown;
 };
 
+export type ConfigPaths = {
+  bundled_config_dir: string;
+  bundled_maps_dir: string;
+  bundled_loot_types_path: string;
+  bundled_assets_dir: string;
+  bundled_icons_dir: string;
+  bundled_screenshots_dir: string;
+};
+
 export const isTauriRuntime = '__TAURI_INTERNALS__' in window;
 const inTauri = isTauriRuntime;
+
+export async function getConfigPaths(): Promise<ConfigPaths | undefined> {
+  if (inTauri) {
+    return invoke<ConfigPaths>('get_config_paths');
+  }
+
+  return undefined;
+}
 
 export async function loadConfigBundle(): Promise<RawConfigBundle> {
   if (inTauri) {
@@ -48,6 +65,22 @@ export async function setOverlayVisible(visible: boolean): Promise<void> {
   if (inTauri) {
     await invoke('set_overlay_visible', { visible });
   }
+}
+
+export async function resolveResourceUrl(path: string): Promise<string> {
+  if (inTauri) {
+    return invoke<string>('resolve_resource_url', { path });
+  }
+
+  return `/${path}`;
+}
+
+export async function getStartupWarnings(): Promise<string[]> {
+  if (inTauri) {
+    return invoke<string[]>('get_startup_warnings');
+  }
+
+  return [];
 }
 
 export async function getWindowLabel(): Promise<string> {

@@ -18,7 +18,8 @@ export function clampRelative(value: number): number {
     return 0;
   }
 
-  return Math.max(0, Math.min(1, value));
+  const clamped = Math.max(0, Math.min(1, value));
+  return Math.round(clamped * 1000) / 1000;
 }
 
 export function relativeToScreen(point: RelativePoint, size: ScreenSize): ScreenPoint {

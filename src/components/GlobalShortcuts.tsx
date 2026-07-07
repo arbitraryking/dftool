@@ -7,12 +7,20 @@ import { setOverlayVisible } from '../services/tauriApi';
 const canUseTauri = '__TAURI_INTERNALS__' in window;
 const SHORTCUT_EVENT = 'dftool://global-shortcut';
 
+type GlobalShortcutsProps = {
+  onError?: (message: string) => void;
+};
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function shortcutKey(shortcut: string): string {
   const parts = shortcut.toLowerCase().split('+');
   return parts[parts.length - 1] ?? '';
 }
 
-export function GlobalShortcuts() {
+export function GlobalShortcuts({ onError }: GlobalShortcutsProps) {
   const state = useAppState();
   const dispatch = useAppDispatch();
   const stateRef = useRef<AppState>(state);
@@ -53,7 +61,10 @@ export function GlobalShortcuts() {
         case 'keyh': {
           const visible = !currentState.overlayVisible;
           dispatch({ type: 'setOverlayVisible', visible });
-          void setOverlayVisible(visible);
+          void setOverlayVisible(visible).catch((error: unknown) => {
+            dispatch({ type: 'setOverlayVisible', visible: !visible });
+            onError?.(`快捷键切换覆盖层失败：${errorMessage(error)}`);
+          });
           break;
         }
         case 'digit1':
@@ -74,13 +85,15 @@ export function GlobalShortcuts() {
       }
     }).then((cleanup) => {
       unlisten = cleanup;
+    }).catch((error: unknown) => {
+      onError?.(`监听全局快捷键失败：${errorMessage(error)}`);
     });
 
     return () => {
       disposed = true;
       unlisten?.();
     };
-  }, [dispatch]);
+  }, [dispatch, onError]);
 
   return null;
 }
