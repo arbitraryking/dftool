@@ -10,6 +10,7 @@ export type AppMode = 'browse' | 'inspect' | 'edit';
 export type AppState = {
   status: 'loading' | 'ready' | 'error';
   error?: string;
+  runtimeError?: string;
   mode: AppMode;
   overlayVisible: boolean;
   lootTypes?: LootTypesConfig;
@@ -24,6 +25,7 @@ export type AppState = {
 export type AppAction =
   | { type: 'loaded'; lootTypes: LootTypesConfig; maps: MapConfig[]; settings: UserSettings }
   | { type: 'failed'; error: string }
+  | { type: 'setRuntimeError'; error?: string }
   | { type: 'setMode'; mode: AppMode }
   | { type: 'setOverlayVisible'; visible: boolean }
   | { type: 'selectMap'; mapId: string }
@@ -91,6 +93,8 @@ function reducer(state: AppState, action: AppAction): AppState {
       };
     case 'failed':
       return { ...state, status: 'error', error: action.error };
+    case 'setRuntimeError':
+      return { ...state, runtimeError: action.error };
     case 'setMode':
       return { ...state, mode: action.mode, selectedPointId: undefined };
     case 'setOverlayVisible':
@@ -185,6 +189,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       }
     }).then((cleanup) => {
       unlisten = cleanup;
+    }).catch((error: unknown) => {
+      baseDispatch({ type: 'setRuntimeError', error: `同步窗口状态失败：${error instanceof Error ? error.message : String(error)}` });
     });
 
     return () => {
@@ -194,7 +200,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void setOverlayInteractive(state.mode !== 'browse');
+    setOverlayInteractive(state.mode !== 'browse')
+      .then(() => baseDispatch({ type: 'setRuntimeError', error: undefined }))
+      .catch((error: unknown) => {
+        baseDispatch({ type: 'setRuntimeError', error: `切换覆盖层交互模式失败：${error instanceof Error ? error.message : String(error)}` });
+      });
   }, [state.mode]);
 
   const stateValue = useMemo(() => state, [state]);

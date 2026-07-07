@@ -1,5 +1,32 @@
-import { useState } from 'react';
+import { ImgHTMLAttributes, useEffect, useState } from 'react';
+import { resolveResourceUrl } from '../services/tauriApi';
 import { getSelectedMap, useAppDispatch, useAppState } from '../state/appStore';
+
+type ResourceImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
+  src: string;
+};
+
+function ResourceImage({ src, ...props }: ResourceImageProps) {
+  const [resolvedSrc, setResolvedSrc] = useState(`/${src}`);
+
+  useEffect(() => {
+    let disposed = false;
+
+    resolveResourceUrl(src)
+      .then((url) => {
+        if (!disposed) setResolvedSrc(url);
+      })
+      .catch(() => {
+        if (!disposed) setResolvedSrc(`/${src}`);
+      });
+
+    return () => {
+      disposed = true;
+    };
+  }, [src]);
+
+  return <img src={resolvedSrc} {...props} />;
+}
 
 export function MarkerDetails() {
   const state = useAppState();
@@ -25,7 +52,7 @@ export function MarkerDetails() {
       {point.description && <p>{point.description}</p>}
       {point.tags.length > 0 && <p className="muted">标签：{point.tags.join('、')}</p>}
       <div className="screenshot-box">
-        {screenshot ? <img src={`/${screenshot}`} alt={point.title} onError={(event) => (event.currentTarget.alt = '截图缺失')} /> : <span className="muted">暂无实景截图</span>}
+        {screenshot ? <ResourceImage src={screenshot} alt={point.title} onError={(event) => (event.currentTarget.alt = '截图缺失')} /> : <span className="muted">暂无实景截图</span>}
       </div>
       {point.screenshots.length > 1 && (
         <div className="row">
