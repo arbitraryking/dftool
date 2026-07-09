@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAdjacentMapId } from '../domain/mapSelection';
 import { getSelectedMap, saveCurrentMap, saveCurrentSettings, useAppDispatch, useAppState } from '../state/appStore';
-import { ConfigPaths, getConfigPaths, getStartupWarnings, isTauriRuntime, setOverlayVisible } from '../services/tauriApi';
+import { ConfigPaths, commitImportedScreenshots, discardImportedScreenshots, getConfigPaths, getStartupWarnings, isTauriRuntime, setOverlayVisible } from '../services/tauriApi';
 import { LootTypeFilters } from './LootTypeFilters';
 import { MapSelector } from './MapSelector';
 import { ModeControls } from './ModeControls';
@@ -58,6 +58,14 @@ export function ControlApp() {
     try {
       const mapId = await saveCurrentMap(state);
       if (mapId) {
+        const savedMap = state.maps.find((map) => map.id === mapId);
+        const referencedScreenshots = new Set(savedMap?.points.flatMap((point) => point.screenshots) ?? []);
+        const pendingImportedScreenshots = state.pendingImportedScreenshotsByMapId[mapId] ?? [];
+        const retainedScreenshots = pendingImportedScreenshots.filter((path) => referencedScreenshots.has(path));
+        const orphanedScreenshots = pendingImportedScreenshots.filter((path) => !referencedScreenshots.has(path));
+        await commitImportedScreenshots(retainedScreenshots);
+        await discardImportedScreenshots(orphanedScreenshots);
+        dispatch({ type: 'clearPendingImportedScreenshots', mapId });
         dispatch({ type: 'markMapClean', mapId });
         setMessage('当前地图配置已保存到内置地图目录；如存在旧版本，已生成 .bak 备份');
       }

@@ -7,6 +7,7 @@ import {
   mapConfigSchema,
   userSettingsSchema,
 } from './schemas';
+import { getImageResourcePathIssue } from './resourcePaths';
 
 export function parseLootTypesConfig(input: unknown): LootTypesConfig {
   return lootTypesConfigSchema.parse(input);
@@ -39,6 +40,17 @@ export function collectMapValidationIssues(map: MapConfig, lootTypes: LootTypesC
         pointId: point.id,
         message: `点位 ${point.id} 坐标越界`,
       });
+    }
+
+    for (const screenshot of point.screenshots) {
+      const issue = getImageResourcePathIssue(screenshot, { requireScreenshotRoot: true });
+      if (issue) {
+        issues.push({
+          level: 'warning',
+          pointId: point.id,
+          message: `点位 ${point.id} 截图路径 ${screenshot} 无效：${issue}`,
+        });
+      }
     }
   }
 

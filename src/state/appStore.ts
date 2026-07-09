@@ -19,6 +19,7 @@ export type AppState = {
   selectedPointId?: string;
   editingPoint?: MapPoint | NewMapPoint;
   dirtyMapIds: string[];
+  pendingImportedScreenshotsByMapId: Record<string, string[]>;
   settingsDirty: boolean;
 };
 
@@ -37,6 +38,8 @@ export type AppAction =
   | { type: 'savePoint'; point: MapPoint | NewMapPoint; originalPointId?: string }
   | { type: 'movePoint'; pointId: string; x: number; y: number }
   | { type: 'deletePoint'; pointId: string }
+  | { type: 'addPendingImportedScreenshots'; mapId: string; paths: string[] }
+  | { type: 'clearPendingImportedScreenshots'; mapId: string }
   | { type: 'markMapClean'; mapId: string }
   | { type: 'markSettingsClean' };
 
@@ -57,6 +60,7 @@ const initialState: AppState = {
   overlayVisible: false,
   maps: [],
   dirtyMapIds: [],
+  pendingImportedScreenshotsByMapId: {},
   settingsDirty: false,
 };
 
@@ -145,6 +149,21 @@ function reducer(state: AppState, action: AppAction): AppState {
     case 'deletePoint': {
       const selectedMap = getSelectedMap(state);
       return selectedMap ? replaceSelectedMap(state, deletePoint(selectedMap, action.pointId)) : state;
+    }
+    case 'addPendingImportedScreenshots': {
+      const existing = state.pendingImportedScreenshotsByMapId[action.mapId] ?? [];
+      const paths = [...new Set([...existing, ...action.paths])];
+      return {
+        ...state,
+        pendingImportedScreenshotsByMapId: {
+          ...state.pendingImportedScreenshotsByMapId,
+          [action.mapId]: paths,
+        },
+      };
+    }
+    case 'clearPendingImportedScreenshots': {
+      const { [action.mapId]: _removed, ...pendingImportedScreenshotsByMapId } = state.pendingImportedScreenshotsByMapId;
+      return { ...state, pendingImportedScreenshotsByMapId };
     }
     case 'markMapClean':
       return { ...state, dirtyMapIds: state.dirtyMapIds.filter((id) => id !== action.mapId) };
