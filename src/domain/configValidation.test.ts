@@ -32,6 +32,29 @@ describe('configValidation', () => {
     expect(issues.map((issue) => issue.level)).toEqual(['warning', 'error']);
   });
 
+  it('reports unsafe screenshot paths as warnings', () => {
+    const issues = collectMapValidationIssues(
+      {
+        ...mapFixture,
+        points: [
+          {
+            ...mapFixture.points[0],
+            screenshots: [
+              'assets/screenshots/zero-dam/valid.png',
+              'assets/screenshots/zero-dam/../secret.png',
+              'C:\\Users\\me\\shot.png',
+              'assets/screenshots/zero-dam/shot.txt',
+            ],
+          },
+        ],
+      },
+      lootTypesFixture,
+    );
+
+    expect(issues).toHaveLength(3);
+    expect(issues.every((issue) => issue.level === 'warning')).toBe(true);
+  });
+
   it('normalizes missing settings from config defaults', () => {
     const settings = normalizeUserSettings(undefined, lootTypesFixture, [mapFixture]);
 

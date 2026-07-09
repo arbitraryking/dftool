@@ -192,6 +192,11 @@ label {
   gap: 10px;
 }
 
+.screenshot-field {
+  display: grid;
+  gap: 6px;
+}
+
 .screenshot-box {
   display: grid;
   min-height: 160px;

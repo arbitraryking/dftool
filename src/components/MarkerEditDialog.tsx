@@ -1,12 +1,11 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import { appendCsvValue, getImageResourcePathIssue, splitCsv } from '../domain/resourcePaths';
 import { MapPoint } from '../domain/schemas';
 import { getSelectedMap, useAppDispatch, useAppState } from '../state/appStore';
+import { discardImportedScreenshots, importPointScreenshot, isTauriRuntime } from '../services/tauriApi';
 
-function splitCsv(value: string): string[] {
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 export function MarkerEditDialog() {
@@ -14,7 +13,10 @@ export function MarkerEditDialog() {
   const dispatch = useAppDispatch();
   const selectedMap = getSelectedMap(state);
   const editingPoint = state.editingPoint;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const sessionImportedPathsRef = useRef<string[]>([]);
   const [error, setError] = useState('');
+  const [importing, setImporting] = useState(false);
   const [originalPointId, setOriginalPointId] = useState<string | undefined>();
   const [form, setForm] = useState({
     id: '',
@@ -29,11 +31,14 @@ export function MarkerEditDialog() {
 
   useEffect(() => {
     if (!editingPoint) {
+      void discardSessionImports();
       return;
     }
 
+    void discardSessionImports();
     const pointId = 'id' in editingPoint ? editingPoint.id : undefined;
     setOriginalPointId(pointId);
+    setImporting(false);
     setError('');
     setForm({
       id: pointId ?? '',
@@ -47,11 +52,92 @@ export function MarkerEditDialog() {
     });
   }, [editingPoint]);
 
+  useEffect(() => {
+    if (state.mode !== 'edit') {
+      void discardSessionImports();
+    }
+  }, [state.mode]);
+
+  useEffect(() => () => {
+    void discardSessionImports();
+  }, []);
+
   if (!editingPoint || state.mode !== 'edit') {
     return null;
   }
 
   const isExisting = Boolean(originalPointId && selectedMap?.points.some((point) => point.id === originalPointId));
+
+  async function discardSessionImports() {
+    const paths = sessionImportedPathsRef.current;
+    if (paths.length === 0) {
+      return;
+    }
+
+    sessionImportedPathsRef.current = [];
+    try {
+      await discardImportedScreenshots(paths);
+    } catch (error: unknown) {
+      setError(`清理未保存截图失败：${errorMessage(error)}`);
+    }
+  }
+
+  function validateScreenshotPaths(paths: string[]): string | undefined {
+    for (const path of paths) {
+      const issue = getImageResourcePathIssue(path, { requireScreenshotRoot: true });
+      if (issue) {
+        return `截图路径 ${path} 无效：${issue}`;
+      }
+    }
+
+    return undefined;
+  }
+
+  async function closeEditor() {
+    await discardSessionImports();
+    dispatch({ type: 'closeEditor' });
+  }
+
+  async function deleteCurrentPoint() {
+    await discardSessionImports();
+    if (originalPointId) {
+      dispatch({ type: 'deletePoint', pointId: originalPointId });
+    }
+  }
+
+  function startImport() {
+    setError('');
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !selectedMap) {
+      return;
+    }
+
+    setImporting(true);
+    setError('');
+
+    try {
+      const pointId = form.id.trim() || originalPointId;
+      const importedPath = await importPointScreenshot(selectedMap.id, pointId, file);
+      if (!importedPath) {
+        return;
+      }
+
+      sessionImportedPathsRef.current = [...new Set([...sessionImportedPathsRef.current, importedPath])];
+      setForm((current) => ({
+        ...current,
+        screenshots: appendCsvValue(current.screenshots, importedPath),
+      }));
+    } catch (error: unknown) {
+      setError(`导入截图失败：${errorMessage(error)}`);
+    } finally {
+      setImporting(false);
+    }
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -69,6 +155,13 @@ export function MarkerEditDialog() {
       return;
     }
 
+    const screenshots = splitCsv(form.screenshots);
+    const screenshotIssue = validateScreenshotPaths(screenshots);
+    if (screenshotIssue) {
+      setError(screenshotIssue);
+      return;
+    }
+
     const point: MapPoint = {
       id: nextId ?? '',
       type: form.type,
@@ -77,10 +170,25 @@ export function MarkerEditDialog() {
       x,
       y,
       tags: splitCsv(form.tags),
-      screenshots: splitCsv(form.screenshots),
+      screenshots,
     };
 
+    const sessionImportedPaths = sessionImportedPathsRef.current;
+    const retainedImportedPaths = sessionImportedPaths.filter((path) => screenshots.includes(path));
+    const removedImportedPaths = sessionImportedPaths.filter((path) => !screenshots.includes(path));
+
     dispatch({ type: 'savePoint', point, originalPointId });
+    if (removedImportedPaths.length > 0) {
+      void discardImportedScreenshots(removedImportedPaths);
+    }
+    if (selectedMap && retainedImportedPaths.length > 0) {
+      dispatch({
+        type: 'addPendingImportedScreenshots',
+        mapId: selectedMap.id,
+        paths: retainedImportedPaths,
+      });
+    }
+    sessionImportedPathsRef.current = [];
   }
 
   return (
@@ -88,7 +196,7 @@ export function MarkerEditDialog() {
       <form onSubmit={submit}>
         <div className="row" style={{ justifyContent: 'space-between' }}>
           <h2>{isExisting ? '编辑点位' : '新增点位'}</h2>
-          <button type="button" onClick={() => dispatch({ type: 'closeEditor' })}>关闭</button>
+          <button type="button" onClick={() => void closeEditor()}>关闭</button>
         </div>
 
         {error && <strong className="error">{error}</strong>}
@@ -133,15 +241,28 @@ export function MarkerEditDialog() {
           <input value={form.tags} onChange={(event) => setForm({ ...form, tags: event.target.value })} />
         </label>
 
-        <label>
-          截图路径（逗号分隔，可置空）
+        <div className="screenshot-field">
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <span>截图路径（逗号分隔，可置空）</span>
+            <button type="button" onClick={startImport} disabled={!isTauriRuntime || importing || !selectedMap}>
+              {importing ? '导入中...' : '导入截图'}
+            </button>
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            onChange={(event) => void handleFileSelected(event)}
+            hidden
+          />
           <input value={form.screenshots} onChange={(event) => setForm({ ...form, screenshots: event.target.value })} />
-        </label>
+          {!isTauriRuntime && <span className="muted">浏览器预览不支持导入截图，可手动填写 public 下对应资源路径。</span>}
+        </div>
 
         <div className="row">
           <button type="submit">保存到内存</button>
           {isExisting && originalPointId && (
-            <button type="button" onClick={() => dispatch({ type: 'deletePoint', pointId: originalPointId })}>删除</button>
+            <button type="button" onClick={() => void deleteCurrentPoint()}>删除</button>
           )}
         </div>
       </form>
