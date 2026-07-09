@@ -12,6 +12,7 @@ export default defineConfig({
   envPrefix: ['VITE_', 'TAURI_'],
   test: {
     environment: 'jsdom',
+    exclude: ['**/node_modules/**', '**/.git/**', '**/.claude/**'],
     setupFiles: ['./src/test/setup.ts'],
   },
 });

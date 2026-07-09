@@ -55,6 +55,32 @@ export async function saveMapConfig(mapId: string, mapConfig: unknown): Promise<
   }
 }
 
+export async function importPointScreenshot(mapId: string, pointId: string | undefined, file: File): Promise<string | undefined> {
+  if (!inTauri) {
+    return undefined;
+  }
+
+  const bytes = Array.from(new Uint8Array(await file.arrayBuffer()));
+  return invoke<string>('import_point_screenshot', {
+    mapId,
+    pointId: pointId || null,
+    fileName: file.name,
+    bytes,
+  });
+}
+
+export async function discardImportedScreenshots(paths: string[]): Promise<void> {
+  if (inTauri && paths.length > 0) {
+    await invoke('discard_imported_screenshots', { paths });
+  }
+}
+
+export async function commitImportedScreenshots(paths: string[]): Promise<void> {
+  if (inTauri && paths.length > 0) {
+    await invoke('commit_imported_screenshots', { paths });
+  }
+}
+
 export async function setOverlayInteractive(interactive: boolean): Promise<void> {
   if (inTauri) {
     await invoke('set_overlay_interactive', { interactive });
