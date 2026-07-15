@@ -31,14 +31,14 @@ describe('overlay hit testing', () => {
   });
 
   it('converts screen coordinates to overlay client coordinates using scale factor', () => {
-    expect(screenToClient({ x: 350, y: 500 }, { innerX: 100, innerY: 200, scaleFactor: 2 })).toEqual({
+    expect(screenToClient({ x: 350, y: 500 }, { innerX: 100, innerY: 200, scaleFactorx: 2, scaleFactory: 2 })).toEqual({
       x: 125,
       y: 150,
     });
   });
 
   it('handles negative monitor coordinates', () => {
-    expect(screenToClient({ x: -1750, y: 250 }, { innerX: -1920, innerY: 100, scaleFactor: 1 })).toEqual({
+    expect(screenToClient({ x: -1750, y: 250 }, { innerX: -1920, innerY: 100, scaleFactorx: 1, scaleFactory: 1 })).toEqual({
       x: 170,
       y: 150,
     });

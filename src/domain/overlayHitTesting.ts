@@ -13,7 +13,8 @@ export type HitRect = {
 export type WindowMetrics = {
   innerX: number;
   innerY: number;
-  scaleFactor: number;
+  scaleFactorx: number;
+  scaleFactory: number;
 };
 
 export function expandRect(rect: HitRect, padding: number): HitRect {
@@ -34,8 +35,9 @@ export function pointInAnyRect(point: Point, rects: HitRect[]): boolean {
 }
 
 export function screenToClient(point: Point, metrics: WindowMetrics): Point {
+  console.log((point.x - metrics.innerX) / metrics.scaleFactorx,(point.y - metrics.innerY) / metrics.scaleFactory)
   return {
-    x: (point.x - metrics.innerX) / metrics.scaleFactor,
-    y: (point.y - metrics.innerY) / metrics.scaleFactor,
+    x: (point.x - metrics.innerX) / metrics.scaleFactorx,
+    y: (point.y - metrics.innerY) / metrics.scaleFactory,
   };
 }

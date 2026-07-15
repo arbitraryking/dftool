@@ -4,7 +4,7 @@
     {
       "id": "diamond",
       "name": "钻石",
-      "icon": "assets/icons/diamond.svg",
+      "icon": "assets/icons/非洲之心.png",
       "color": "#40D9FF",
       "defaultSize": 30,
       "valueLevel": 5,
@@ -13,7 +13,7 @@
     {
       "id": "keycard",
       "name": "房卡",
-      "icon": "assets/icons/keycard.svg",
+      "icon": "assets/icons/房卡.png",
       "color": "#FFCC33",
       "defaultSize": 30,
       "valueLevel": 5,
@@ -21,9 +21,9 @@
     },
     {
       "id": "safe",
-      "name": "保险箱",
-      "icon": "assets/icons/safe.svg",
-      "color": "#A78BFA",
+      "name": "大红",
+      "icon": "assets/icons/大红.png",
+      "color": "#F5222D",
       "defaultSize": 28,
       "valueLevel": 4,
       "defaultVisible": true

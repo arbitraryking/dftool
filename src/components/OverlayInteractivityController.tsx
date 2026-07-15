@@ -4,6 +4,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { expandRect, HitRect, pointInAnyRect, screenToClient, WindowMetrics } from '../domain/overlayHitTesting';
 import { setOverlayInteractive } from '../services/tauriApi';
 import { getSelectedMap, useAppDispatch, useAppState } from '../state/appStore';
+import { MapPoint, MapConfig } from '../domain/schemas'
 
 const DEVICE_MOUSE_MOVE_EVENT = 'dftool://device-mouse-move';
 const MARKER_HIT_PADDING = 8;
@@ -14,30 +15,56 @@ type DeviceMouseMovePayload = {
   y: number;
 };
 
+
 type TauriWindow = ReturnType<typeof getCurrentWindow>;
 
-function getElementHitRect(element: Element, padding: number): HitRect | undefined {
-  const rect = element.getBoundingClientRect();
+function isElement(
+  value: Element | MapPoint,
+): value is Element {
+  return value instanceof Element;
+}
 
-  if (rect.width <= 0 || rect.height <= 0) {
-    return undefined;
+function getElementHitRect(element: Element | MapPoint, padding: number): HitRect | undefined {
+  if (isElement(element)) {
+    const rect = element.getBoundingClientRect();
+
+    if (rect.width <= 0 || rect.height <= 0) {
+      return undefined;
+    }
+
+    return expandRect(
+      {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+      },
+      padding,
+    );
   }
+  const container = document.querySelector(".marker-layer")
 
+  const containerRect = container?.getBoundingClientRect()??{x:1280, y:720, width:2560, height:1440};
+  console.log(containerRect)
+  const x = element.x * containerRect.width
+  const y = element.y * containerRect.height;
   return expandRect(
     {
-      left: rect.left,
-      top: rect.top,
-      right: rect.right,
-      bottom: rect.bottom,
+      left: x - 28 / 2,
+      top: y - 28 / 2,
+      right: x + 28 / 2,
+      bottom: y + 28 / 2,
     },
     padding,
   );
 }
 
-function collectHitRects(): HitRect[] {
-  const markerRects = Array.from(document.querySelectorAll('.marker'))
-    .map((element) => getElementHitRect(element, MARKER_HIT_PADDING))
-    .filter((rect): rect is HitRect => Boolean(rect));
+function collectHitRects(points : MapPoint[]): HitRect[] {
+  const markerRects = points.map((point)=>getElementHitRect(point, MARKER_HIT_PADDING)).filter((rect): rect is HitRect => Boolean(rect)) ?? [];;
+  console.log(markerRects)
+  // const markerRects = Array.from(document.querySelectorAll('.marker'))
+  //   .map((element) => getElementHitRect(element, MARKER_HIT_PADDING))
+  //   .filter((rect): rect is HitRect => Boolean(rect));
   const detailsRects = Array.from(document.querySelectorAll('.marker-details'))
     .map((element) => getElementHitRect(element, PANEL_HIT_PADDING))
     .filter((rect): rect is HitRect => Boolean(rect));
@@ -141,9 +168,16 @@ export function OverlayInteractivityController() {
 
     async function refreshMetrics() {
       const overlayWindow = windowRef.current ?? getCurrentWindow();
-      const scaleFactor = await overlayWindow.scaleFactor();
+      const insize = await overlayWindow.innerSize()
+      const outsize = await overlayWindow.outerSize()
+      const container = document.querySelector(".marker-layer")
 
-      if (!metricsDirtyRef.current && metricsRef.current && metricsRef.current.scaleFactor === scaleFactor) {
+      const containerRect = container?.getBoundingClientRect()??{x:1280, y:720, width:2560, height:1440};
+      
+      const xscaleFactor = insize.width / containerRect.width;
+      const yscaleFactor = insize.width / containerRect.width;
+
+      if (!metricsDirtyRef.current && metricsRef.current && metricsRef.current.scaleFactorx === xscaleFactor && metricsRef.current.scaleFactory === yscaleFactor) {
         return metricsRef.current;
       }
 
@@ -152,7 +186,8 @@ export function OverlayInteractivityController() {
       metricsRef.current = {
         innerX: innerPosition.x,
         innerY: innerPosition.y,
-        scaleFactor,
+        scaleFactorx: xscaleFactor,
+        scaleFactory: yscaleFactor,
       };
       metricsDirtyRef.current = false;
       return metricsRef.current;
@@ -162,7 +197,7 @@ export function OverlayInteractivityController() {
       const metrics = await refreshMetrics();
 
       if (hitRectsDirtyRef.current) {
-        hitRectsRef.current = collectHitRects();
+        hitRectsRef.current = collectHitRects(selectedMap?.points ?? []);
         hitRectsDirtyRef.current = false;
       }
 

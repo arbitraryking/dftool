@@ -20,7 +20,8 @@
         "resizable": true,
         "fullscreen": false,
         "transparent": false,
-        "decorations": true
+        "decorations": true,
+        "additionalBrowserArgs": "--remote-debugging-port=9222"
       },
       {
         "label": "overlay",
@@ -30,7 +31,8 @@
         "decorations": false,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "visible": false
+        "visible": false,
+        "additionalBrowserArgs": "--remote-debugging-port=9222"
       }
     ],
     "security": {
