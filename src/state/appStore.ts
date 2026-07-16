@@ -3,7 +3,6 @@ import { emit, listen } from '@tauri-apps/api/event';
 import { deletePoint, movePoint, NewMapPoint, addPoint, updatePoint } from '../domain/markerEditing';
 import { LootTypesConfig, MapConfig, MapPoint, UserSettings } from '../domain/schemas';
 import { loadInitialConfig, persistMapConfig, persistUserSettings } from '../services/configStore';
-import { setOverlayInteractive } from '../services/tauriApi';
 
 export type AppMode = 'browse' | 'inspect' | 'edit';
 
@@ -217,14 +216,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       unlisten?.();
     };
   }, []);
-
-  useEffect(() => {
-    setOverlayInteractive(state.mode !== 'browse')
-      .then(() => baseDispatch({ type: 'setRuntimeError', error: undefined }))
-      .catch((error: unknown) => {
-        baseDispatch({ type: 'setRuntimeError', error: `切换覆盖层交互模式失败：${error instanceof Error ? error.message : String(error)}` });
-      });
-  }, [state.mode]);
 
   const stateValue = useMemo(() => state, [state]);
 
