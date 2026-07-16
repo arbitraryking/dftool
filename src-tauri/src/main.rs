@@ -9,8 +9,22 @@ use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{path::BaseDirectory, Emitter, Manager, WindowEvent};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+#[cfg(target_os = "windows")]
+use windows_sys::Win32::Foundation::POINT;
+#[cfg(target_os = "windows")]
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+    GetAsyncKeyState, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
+    VIRTUAL_KEY, VK_1, VK_M,
+};
+#[cfg(target_os = "windows")]
+use windows_sys::Win32::UI::WindowsAndMessaging::GetCursorPos;
 
 const SHORTCUT_EVENT: &str = "dftool://global-shortcut";
+const DEVICE_MOUSE_MOVE_EVENT: &str = "dftool://device-mouse-move";
+#[cfg(target_os = "windows")]
+const MAP_KEY_POLL_INTERVAL_MS: u64 = 16;
+#[cfg(target_os = "windows")]
+const MAP_FULL_VIEW_DELAY_MS: u64 = 1500;
 const PENDING_SCREENSHOT_IMPORTS_FILE: &str = "pending-screenshot-imports.json";
 const MAX_IMPORTED_SCREENSHOT_BYTES: u64 = 25 * 1024 * 1024;
 const IMPORTED_SCREENSHOT_EXTENSIONS: [&str; 5] = ["png", "jpg", "jpeg", "webp", "gif"];
@@ -31,6 +45,12 @@ struct StartupWarnings(Mutex<Vec<String>>);
 #[derive(Default, Deserialize, Serialize)]
 struct PendingScreenshotImports {
     paths: Vec<String>,
+}
+
+#[derive(Clone, Copy, Serialize)]
+struct DeviceMouseMovePayload {
+    x: i32,
+    y: i32,
 }
 
 fn push_startup_warning(app: &tauri::AppHandle, message: String) {
@@ -454,6 +474,111 @@ fn set_overlay_visible(app: tauri::AppHandle, visible: bool) -> Result<(), Strin
     Ok(())
 }
 
+#[cfg(target_os = "windows")]
+fn start_device_mouse_move_emitter(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let mut last_position: Option<(i32, i32)> = None;
+
+        loop {
+            let mut point = POINT { x: 0, y: 0 };
+            let has_position = unsafe { GetCursorPos(&mut point) != 0 };
+
+            if has_position && last_position != Some((point.x, point.y)) {
+                last_position = Some((point.x, point.y));
+
+                if let Some(overlay) = app.get_webview_window("overlay") {
+                    let _ = overlay.emit(
+                        DEVICE_MOUSE_MOVE_EVENT,
+                        DeviceMouseMovePayload {
+                            x: point.x,
+                            y: point.y,
+                        },
+                    );
+                }
+            }
+
+            std::thread::sleep(std::time::Duration::from_millis(16));
+        }
+    });
+}
+
+#[cfg(not(target_os = "windows"))]
+fn start_device_mouse_move_emitter(_app: tauri::AppHandle) {}
+
+#[cfg(target_os = "windows")]
+fn is_overlay_visible(app: &tauri::AppHandle) -> bool {
+    app.get_webview_window("overlay")
+        .and_then(|overlay| overlay.is_visible().ok())
+        .unwrap_or(false)
+}
+
+#[cfg(target_os = "windows")]
+fn send_key_press(key: VIRTUAL_KEY) {
+    let mut inputs = [
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: key,
+                    wScan: 0,
+                    dwFlags: 0,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+        INPUT {
+            r#type: INPUT_KEYBOARD,
+            Anonymous: INPUT_0 {
+                ki: KEYBDINPUT {
+                    wVk: key,
+                    wScan: 0,
+                    dwFlags: KEYEVENTF_KEYUP,
+                    time: 0,
+                    dwExtraInfo: 0,
+                },
+            },
+        },
+    ];
+
+    let sent = unsafe {
+        SendInput(
+            inputs.len() as u32,
+            inputs.as_mut_ptr(),
+            std::mem::size_of::<INPUT>() as i32,
+        )
+    };
+
+    if sent != inputs.len() as u32 {
+        eprintln!("自动发送地图全貌快捷键失败");
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn start_map_full_view_key_automation(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        let mut was_m_down = false;
+
+        loop {
+            let is_m_down = unsafe { (GetAsyncKeyState(VK_M as i32) as u16 & 0x8000) != 0 };
+
+            if is_m_down && !was_m_down && is_overlay_visible(&app) {
+                std::thread::sleep(std::time::Duration::from_millis(MAP_FULL_VIEW_DELAY_MS));
+
+                if is_overlay_visible(&app) {
+                    send_key_press(VK_1);
+                }
+            }
+
+            was_m_down = is_m_down;
+            std::thread::sleep(std::time::Duration::from_millis(MAP_KEY_POLL_INTERVAL_MS));
+        }
+    });
+}
+
+#[cfg(not(target_os = "windows"))]
+fn start_map_full_view_key_automation(_app: tauri::AppHandle) {}
+
 fn main() {
     let result = tauri::Builder::default()
         .manage(StartupWarnings::default())
@@ -512,6 +637,9 @@ fn main() {
                     push_startup_warning(app.handle(), format!("设置覆盖层置顶失败：{error}"));
                 }
             }
+
+            start_device_mouse_move_emitter(app.handle().clone());
+            start_map_full_view_key_automation(app.handle().clone());
             Ok(())
         })
         .run(tauri::generate_context!());

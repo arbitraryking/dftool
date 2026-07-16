@@ -58,6 +58,7 @@ export function MarkerLayer() {
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
+    console.log(event.clientX, event.clientY)
     const position = screenToRelative(
       { x: event.clientX - rect.left, y: event.clientY - rect.top },
       { width: rect.width, height: rect.height },

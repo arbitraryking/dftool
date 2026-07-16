@@ -693,7 +693,7 @@ dependencies = [
 
 [[package]]
 name = "dftool"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "serde",
  "serde_json",
@@ -701,6 +701,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-global-shortcut",
  "tauri-plugin-opener",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
